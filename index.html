@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoD - Satellite Imagery Semantic Retrieval & Change Analysis</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+        :root {
+            background-color: #121824;
+            --bg-primary: #121824;
+            --bg-secondary: #1a2333;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --gray-text: #94a3b8;
+            --border-color: #2e3c54;
+            --accent: #22c55e; 
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 400px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 10;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .brand {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .search-section, .filter-section, .review-section {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .search-bar:focus {
+            border-color: var(--accent);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-primary);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute; 
+            cursor: pointer; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border-color); 
+            transition: .4s; 
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute; 
+            content: ""; 
+            height: 14px; 
+            width: 14px; 
+            left: 4px; 
+            bottom: 4px;
+            background-color: var(--text-main); 
+            transition: .4s; 
+            border-radius: 50%;
+        }
+
+        /* Active toggle state styling */
+        .switch input:checked + .slider { 
+            background-color: #22c55e; 
+        }
+        
+        .switch input:checked + .slider:before { 
+            transform: translateX(22px); 
+            background-color: #ffffff; 
+        }
+
+        .queue-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .queue-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .queue-card:hover {
+            border-color: #22c55e;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .card-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 6px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .btn-confirm { background-color: #2e7d32; color: white; }
+        .btn-reject { background-color: #c62828; color: white; }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #map {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        .timeline-overlay {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            background: rgba(26, 35, 51, 0.9);
+            border: 1px solid var(--border-color);
+            padding: 15px 25px;
+            border-radius: 10px;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .timeline-slider {
+            width: 100%;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">🇮🇳 IntelSight: MoD Satellite AI</div>
+        
+        <div class="search-section">
+            <label for="search">AI Semantic Query (Press Enter)</label>
+            <input type="text" id="search" class="search-bar" placeholder="e.g., newly built structures near a river...">
+        </div>
+
+        <div class="filter-section">
+            <label>Quality Handling & Filters</label>
+            <div class="toggle-container">
+                <span style="font-size: 0.9rem;">Suppress False Alarms (Clouds/Seasons)</span>
+                <label class="switch">
+                    <input type="checkbox" id="suppress-switch" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="review-section" style="display: flex; flex-direction: column; flex-grow: 1;">
+            <label>Analyst Review Queue (Verification)</label>
+            <div class="queue-list" id="queue-list">
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Connecting to server...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="map"></div>
+
+        <div class="timeline-overlay">
+            <label style="text-align: center; margin-bottom: 5px;">Temporal Analysis Engine</label>
+            <input type="range" min="1" max="4" value="4" class="timeline-slider" id="time-slider">
+            <div class="timeline-labels">
+                <span>Jan 2024 (Baseline)</span>
+                <span>Jul 2024</span>
+                <span>Jan 2025</span>
+                <span>Active (2026)</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script>
+        // Init map configuration
+        const map = L.map('map').setView([31.1048, 77.1734], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let activeMarkers = [];
+        const API_BASE = 'http://127.0.0'; 
+
+        // Fetch logs and target detection pipeline data from backend
+        async function loadDetectionQueue() {
+            const container = document.getElementById('queue-list');
+            const queryStr = document.getElementById('search').value;
+            const isSuppressed = document.getElementById('suppress-switch').checked;
+
+            try {
+                const endpoint = `${API_BASE}/queue?search=${encodeURIComponent(queryStr)}&suppress=${isSuppressed}`;
+                const res = await fetch(endpoint);
+                if (!res.ok) throw new Error('Failed to fetch data');
+                
+                const data = await res.json();
+                
+                // Clear existing render pipeline elements
+                container.innerHTML = '';
+                activeMarkers.forEach(m => map.removeLayer(m));
+                activeMarkers = [];
+
+                if(data.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No detections found.</p>';
+                    return;
+                }
+
+               data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'queue-card';
+            card.innerHTML = `
+                <div class="card-header">
+                    <span>Target ID: ${item.id}</span>
+                    <span style="color: #22c55e;">${item.confidence}% Match</span>
+                </div>
+            `;
+            
+           
+            container.appendChild(card); 
+        }); 
+    } catch (error) {
+        console.error(error);
+    }
+}
+                    
+            
